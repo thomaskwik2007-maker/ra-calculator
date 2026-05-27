@@ -393,6 +393,22 @@
           </div>
         </div>
 
+        <div class="form-row">
+          <label for="surface-radius" data-i18n="surface_radius_label">Oppervlak radius (laat leeg voor vlak)</label>
+          <div class="input-with-unit">
+            <input type="number" id="surface-radius" value="" step="0.5" placeholder="—">
+            <span class="unit">mm</span>
+          </div>
+          <small data-i18n="surface_radius_help" style="color:var(--text-dim);font-size:11px;margin-top:2px;line-height:1.4;">Positief = convex (bol). Negatief = concaaf (hol). Leeg = vlak oppervlak.</small>
+        </div>
+
+        <div class="form-row checkbox-row">
+          <label for="conservative-3d" style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;">
+            <input type="checkbox" id="conservative-3d" style="width:16px;height:16px;cursor:pointer;">
+            <span data-i18n="conservative_3d_label">Conservatieve 3D modus (×0.8 stepover, dichter bij Fusion)</span>
+          </label>
+        </div>
+
         <hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">
 
         <div class="mode-toggle">
@@ -643,6 +659,9 @@
       mill_diameter: 'Diameter frees',
       mill_corner_radius: 'Hoekradius (corner radius)',
       mill_radius: 'Frees radius (R = ø/2)',
+      surface_radius_label: 'Oppervlak radius (laat leeg voor vlak)',
+      surface_radius_help: 'Positief = convex (bol). Negatief = concaaf (hol). Leeg = vlak oppervlak.',
+      conservative_3d_label: 'Conservatieve 3D modus (×0.8 stepover, dichter bij Fusion)',
       mode_ra_to_cusp: 'Ra → CUSP',
       mode_cusp_to_ra: 'CUSP → Ra',
       label_target_ra: 'Gewenste Ra waarde (praktijk)',
@@ -695,6 +714,9 @@
       mill_diameter: 'Mill diameter',
       mill_corner_radius: 'Corner radius',
       mill_radius: 'Mill radius (R = ø/2)',
+      surface_radius_label: 'Surface radius (leave empty for flat)',
+      surface_radius_help: 'Positive = convex. Negative = concave. Empty = flat surface.',
+      conservative_3d_label: 'Conservative 3D mode (×0.8 stepover, closer to Fusion)',
       mode_ra_to_cusp: 'Ra → CUSP',
       mode_cusp_to_ra: 'CUSP → Ra',
       label_target_ra: 'Desired Ra value (practical)',
@@ -747,6 +769,9 @@
       mill_diameter: 'Fräserdurchmesser',
       mill_corner_radius: 'Eckenradius (Corner radius)',
       mill_radius: 'Fräserradius (R = ø/2)',
+      surface_radius_label: 'Werkstückradius (leer für eben)',
+      surface_radius_help: 'Positiv = konvex (gewölbt). Negativ = konkav (hohl). Leer = ebene Fläche.',
+      conservative_3d_label: 'Konservativer 3D-Modus (×0.8 Bahnabstand, näher an Fusion)',
       mode_ra_to_cusp: 'Ra → CUSP',
       mode_cusp_to_ra: 'CUSP → Ra',
       label_target_ra: 'Gewünschter Ra-Wert (praktisch)',
@@ -799,6 +824,9 @@
       mill_diameter: 'Diamètre fraise',
       mill_corner_radius: 'Rayon de coin',
       mill_radius: 'Rayon de fraise (R = ø/2)',
+      surface_radius_label: 'Rayon de la surface (vide = plate)',
+      surface_radius_help: 'Positif = convexe. Négatif = concave. Vide = surface plate.',
+      conservative_3d_label: 'Mode 3D conservateur (×0.8 pas latéral, plus proche de Fusion)',
       mode_ra_to_cusp: 'Ra → CUSP',
       mode_cusp_to_ra: 'CUSP → Ra',
       label_target_ra: 'Valeur Ra souhaitée (pratique)',
@@ -982,12 +1010,34 @@
     }
   }
 
+  function getEffectiveMillRadius() {
+    const R_tool = getMillRadius();
+    const surfaceInput = document.getElementById('surface-radius').value.trim();
+    if (!surfaceInput) return R_tool;
+    const R_s = parseFloat(surfaceInput);
+    if (!isFinite(R_s) || R_s === 0) return R_tool;
+    if (R_s > 0) {
+      // Convex workpiece
+      return (R_tool * R_s) / (R_tool + R_s);
+    } else {
+      // Concave workpiece (negative input)
+      const R_s_abs = Math.abs(R_s);
+      if (R_s_abs <= R_tool) return R_tool; // fallback: tool doesn't fit
+      return (R_tool * R_s_abs) / (R_s_abs - R_tool);
+    }
+  }
+
+  function isConservative3D() {
+    return document.getElementById('conservative-3d').checked;
+  }
+
   // ============== FREZEN CALC ==============
   function calcFrezen() {
-    const R = getMillRadius();
+    const R_eff = getEffectiveMillRadius();
     const D = parseFloat(document.getElementById('frees-diameter').value);
     const mode = document.querySelector('.mode-btn[data-mode].active').dataset.mode;
     const k = getCorrection();
+    const conservativeFactor = isConservative3D() ? 0.8 : 1.0;
 
     let cusp, stepover, ra_theo_um, ra_prakt_um;
 
@@ -996,18 +1046,24 @@
       const ra_theo_target_um = ra_target_um / k;
       const ra_theo_target_mm = ra_theo_target_um / 1000;
 
-      stepover = Math.sqrt(32 * R * ra_theo_target_mm);
-      if (stepover > 2 * R) stepover = 2 * R * 0.99;
+      // Compute stepover from target Ra using effective radius
+      stepover = Math.sqrt(32 * R_eff * ra_theo_target_mm);
+      if (stepover > 2 * R_eff) stepover = 2 * R_eff * 0.99;
+
+      // Apply conservative 3D factor
+      stepover *= conservativeFactor;
 
       const halfAe = stepover / 2;
-      cusp = R - Math.sqrt(R * R - halfAe * halfAe);
+      cusp = R_eff - Math.sqrt(R_eff * R_eff - halfAe * halfAe);
 
-      ra_theo_um = ra_theo_target_um;
+      // Recompute Ra from actual (possibly reduced) stepover
+      const ra_actual_mm = (stepover * stepover) / (32 * R_eff);
+      ra_theo_um = ra_actual_mm * 1000;
       ra_prakt_um = ra_theo_um * k;
     } else {
       cusp = parseFloat(document.getElementById('frezen-cusp').value);
 
-      if (cusp >= R) {
+      if (cusp >= R_eff) {
         document.getElementById('result-cusp').textContent = t('error_cusp_invalid');
         document.getElementById('result-cusp').className = 'result-value highlight error';
         document.getElementById('result-stepover').textContent = '—';
@@ -1017,8 +1073,12 @@
         return;
       }
 
-      stepover = 2 * Math.sqrt(2 * R * cusp - cusp * cusp);
-      const ra_theo_mm = (stepover * stepover) / (32 * R);
+      stepover = 2 * Math.sqrt(2 * R_eff * cusp - cusp * cusp);
+
+      // Apply conservative 3D factor
+      stepover *= conservativeFactor;
+
+      const ra_theo_mm = (stepover * stepover) / (32 * R_eff);
       ra_theo_um = ra_theo_mm * 1000;
       ra_prakt_um = ra_theo_um * k;
     }
@@ -1092,11 +1152,13 @@
     calcDraaien();
   });
 
-  const freesInputs = ['frees-diameter', 'frees-corner-radius', 'frezen-ra', 'frezen-cusp'];
+  const freesInputs = ['frees-diameter', 'frees-corner-radius', 'frezen-ra', 'frezen-cusp', 'surface-radius'];
   freesInputs.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('input', calcFrezen);
   });
+
+  document.getElementById('conservative-3d').addEventListener('change', calcFrezen);
 
   const draaiInputs = ['draai-neusradius', 'draai-ra', 'draai-voeding-input', 'draai-bewerking'];
   draaiInputs.forEach(id => {
