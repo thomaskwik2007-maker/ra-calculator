@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ra Calculator</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f1419;
+    --panel: #1a2129;
+    --panel-2: #232c37;
+    --border: #2d3744;
+    --text: #e6edf3;
+    --text-dim: #8b98a8;
+    --accent: #4fb3ff;
+    --accent-hover: #6cc0ff;
+    --success: #4ade80;
+    --warning: #fbbf24;
+    --error: #f87171;
+    --input-bg: #0d1117;
+  }
+
+  body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 20px;
+    line-height: 1.5;
+  }
+
+  .container { max-width: 1200px; margin: 0 auto; }
+
+  .lang-selector {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 12px;
+  }
+
+  .lang-selector select {
+    width: auto;
+    min-width: 150px;
+    padding: 8px 12px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 24px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+
+  .subtitle { color: var(--text-dim); font-size: 14px; }
+
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 20px;
+    background: var(--panel);
+    padding: 6px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 12px 20px;
+    background: transparent;
+    color: var(--text-dim);
+    border: none;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .tab-btn:hover { color: var(--text); }
+
+  .tab-btn.active {
+    background: var(--accent);
+    color: #0f1419;
+    font-weight: 600;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+
+  .panel-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel-title::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 18px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+  @media (max-width: 800px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+
+  .form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+
+  label { font-size: 13px; color: var(--text-dim); font-weight: 500; }
+
+  input[type="number"], select {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--input-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    transition: border-color 0.2s;
+  }
+
+  input[type="number"]:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  input[type="number"]::-webkit-inner-spin-button { opacity: 0.4; }
+
+  .input-with-unit { position: relative; }
+
+  .input-with-unit .unit {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-dim);
+    font-size: 13px;
+    pointer-events: none;
+  }
+
+  .input-with-unit input { padding-right: 60px; }
+
+  .mode-toggle {
+    display: flex;
+    gap: 4px;
+    background: var(--input-bg);
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+
+  .mode-btn {
+    flex: 1;
+    padding: 8px 12px;
+    background: transparent;
+    color: var(--text-dim);
+    border: none;
+    border-radius: 5px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .mode-btn.active { background: var(--panel-2); color: var(--text); }
+
+  .results {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px;
+    margin-top: 8px;
+  }
+
+  .result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+  }
+
+  .result-row:last-child { border-bottom: none; }
+
+  .result-label { color: var(--text-dim); font-size: 13px; }
+
+  .result-value {
+    color: var(--success);
+    font-size: 16px;
+    font-weight: 600;
+    font-family: 'Consolas', 'Monaco', monospace;
+    text-align: right;
+  }
+
+  .result-value.highlight { color: var(--accent); font-size: 20px; }
+  .result-value.warning { color: var(--warning); }
+  .result-value.error { color: var(--error); }
+
+  .info-box {
+    background: var(--panel-2);
+    border-left: 3px solid var(--accent);
+    padding: 12px 14px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 16px;
+    line-height: 1.6;
+  }
+
+  .info-box strong { color: var(--text); }
+
+  .preset-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  .preset-btn {
+    padding: 4px 10px;
+    background: var(--panel-2);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .preset-btn:hover {
+    background: var(--accent);
+    color: #0f1419;
+    border-color: var(--accent);
+  }
+
+  .tool-illustration {
+    text-align: center;
+    padding: 16px;
+    background: var(--input-bg);
+    border-radius: 8px;
+    margin-bottom: 16px;
+  }
+
+  .tool-illustration svg { max-width: 100%; height: auto; }
+
+  .hidden { display: none; }
+
+  .formula {
+    font-family: 'Consolas', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    background: var(--input-bg);
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
+  }
+
+  footer {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 12px;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .correction-banner {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .correction-banner label { margin: 0; }
+
+  .correction-banner input {
+    width: 80px;
+    padding: 6px 10px;
+  }
+
+  .correction-info {
+    font-size: 12px;
+    color: var(--text-dim);
+    flex: 1;
+    min-width: 200px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="lang-selector">
+    <select id="lang-picker" aria-label="Language">
+      <option value="nl">Nederlands</option>
+      <option value="en">English</option>
+      <option value="de">Deutsch</option>
+      <option value="fr">Français</option>
+    </select>
+  </div>
+
+  <header>
+    <h1>Ra Calculator</h1>
+    <div class="subtitle" data-i18n="subtitle">Ruwheidsberekening voor frezen &amp; draaien</div>
+  </header>
+
+  <div class="correction-banner">
+    <label for="correction-factor" data-i18n="correction_label" style="font-weight:600;color:var(--text);">Praktijk correctie:</label>
+    <div class="input-with-unit" style="width:auto;">
+      <input type="number" id="correction-factor" value="1.2" step="0.05" min="1.0" max="2.0">
+      <span class="unit">&times;</span>
+    </div>
+    <div class="correction-info" data-i18n-html="correction_info">
+      Verhouding praktijk-Ra t.o.v. theoretische Ra. <strong>1.0</strong> = puur theoretisch, <strong>1.2</strong> = aanbevolen (20% marge), <strong>1.3+</strong> = veilige marge voor zwakke opspanning/lange uitsteek.
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="frezen" data-i18n="tab_milling">Frezen</button>
+    <button class="tab-btn" data-tab="draaien" data-i18n="tab_turning">Draaien</button>
+  </div>
+
+  <!-- ============ FREZEN ============ -->
+  <div id="tab-frezen" class="tab-content">
+    <div class="grid">
+      <div class="panel">
+        <div class="panel-title" data-i18n="panel_milling_input">Invoer Frees</div>
+
+        <div class="form-row">
+          <label for="frees-type" data-i18n="mill_type_label">Type frees</label>
+          <select id="frees-type">
+            <option value="ball" data-i18n="mill_type_ball">Kogelfrees (Ball End Mill)</option>
+            <option value="bull" data-i18n="mill_type_bull">Toroidale / Bull Nose frees</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label for="frees-diameter" data-i18n="mill_diameter">Diameter frees</label>
+          <div class="input-with-unit">
+            <input type="number" id="frees-diameter" value="6" step="0.1" min="0.1">
+            <span class="unit">mm</span>
+          </div>
+        </div>
+
+        <div class="form-row" id="bull-radius-row" style="display:none;">
+          <label for="frees-corner-radius" data-i18n="mill_corner_radius">Hoekradius (corner radius)</label>
+          <div class="input-with-unit">
+            <input type="number" id="frees-corner-radius" value="0.5" step="0.1" min="0.1">
+            <span class="unit">mm</span>
+          </div>
+        </div>
+
+        <div class="form-row" id="ball-radius-row">
+          <label for="frees-radius" data-i18n="mill_radius">Frees radius (R = &oslash;/2)</label>
+          <div class="input-with-unit">
+            <input type="number" id="frees-radius" value="3" step="0.1" min="0.1" readonly style="opacity:0.7;">
+            <span class="unit">mm</span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label for="surface-radius" data-i18n="surface_radius_label">Oppervlak radius (laat leeg voor vlak)</label>
+          <div class="input-with-unit">
+            <input type="number" id="surface-radius" value="" step="0.5" placeholder="—">
+            <span class="unit">mm</span>
+          </div>
+          <small data-i18n="surface_radius_help" style="color:var(--text-dim);font-size:11px;margin-top:2px;line-height:1.4;">Positief = convex (bol). Negatief = concaaf (hol). Leeg = vlak oppervlak.</small>
+        </div>
+
+        <div class="form-row checkbox-row">
+          <label for="conservative-3d" style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;">
+            <input type="checkbox" id="conservative-3d" style="width:16px;height:16px;cursor:pointer;">
+            <span data-i18n="conservative_3d_label">Conservatieve 3D modus (×0.8 stepover, dichter bij Fusion)</span>
+          </label>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">
+
+        <div class="mode-toggle">
+          <button class="mode-btn active" data-mode="ra-to-cusp" data-i18n="mode_ra_to_cusp">Ra &rarr; CUSP</button>
+          <button class="mode-btn" data-mode="cusp-to-ra" data-i18n="mode_cusp_to_ra">CUSP &rarr; Ra</button>
+        </div>
+
+        <div id="ra-to-cusp-input">
+          <div class="form-row">
+            <label for="frezen-ra" data-i18n="label_target_ra">Gewenste Ra waarde (praktijk)</label>
+            <div class="input-with-unit">
+              <input type="number" id="frezen-ra" value="1.6" step="0.1" min="0.01">
+              <span class="unit">&micro;m</span>
+            </div>
+            <div class="preset-buttons">
+              <button class="preset-btn" data-ra="0.4">N5 (0.4)</button>
+              <button class="preset-btn" data-ra="0.8">N6 (0.8)</button>
+              <button class="preset-btn" data-ra="1.6">N7 (1.6)</button>
+              <button class="preset-btn" data-ra="3.2">N8 (3.2)</button>
+              <button class="preset-btn" data-ra="6.3">N9 (6.3)</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="cusp-to-ra-input" class="hidden">
+          <div class="form-row">
+            <label for="frezen-cusp" data-i18n="label_cusp_input">CUSP Height (uit Fusion)</label>
+            <div class="input-with-unit">
+              <input type="number" id="frezen-cusp" value="0.005" step="0.001" min="0.0001">
+              <span class="unit">mm</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title" data-i18n="panel_milling_result">Resultaat Frezen</div>
+
+        <div class="tool-illustration">
+          <svg viewBox="0 0 300 130" xmlns="http://www.w3.org/2000/svg">
+            <rect x="20" y="80" width="260" height="40" fill="#2d3744"/>
+            <path d="M 20 80 Q 50 70 80 80 Q 110 70 140 80 Q 170 70 200 80 Q 230 70 260 80 Q 280 75 280 80" stroke="#4fb3ff" stroke-width="2" fill="none"/>
+            <circle cx="155" cy="55" r="20" fill="none" stroke="#e6edf3" stroke-width="1.5"/>
+            <line x1="135" y1="55" x2="135" y2="20" stroke="#e6edf3" stroke-width="1.5"/>
+            <line x1="175" y1="55" x2="175" y2="20" stroke="#e6edf3" stroke-width="1.5"/>
+            <text x="155" y="58" fill="#8b98a8" font-size="10" text-anchor="middle">R</text>
+            <line x1="155" y1="55" x2="170" y2="65" stroke="#8b98a8" stroke-width="0.5"/>
+            <text x="20" y="105" fill="#8b98a8" font-size="10">ae</text>
+            <text x="220" y="76" fill="#fbbf24" font-size="10">CUSP</text>
+          </svg>
+        </div>
+
+        <div class="results" id="frezen-results">
+          <div class="result-row">
+            <span class="result-label" data-i18n="result_cusp_label">CUSP Height (Fusion stepover scallop):</span>
+            <span class="result-value highlight" id="result-cusp">&mdash;</span>
+          </div>
+          <div class="result-row">
+            <span class="result-label" data-i18n="result_stepover_label">Stepover (ae):</span>
+            <span class="result-value" id="result-stepover">&mdash;</span>
+          </div>
+          <div class="result-row">
+            <span class="result-label" data-i18n="result_ra_theo_label">Theoretische Ra (voor invoer):</span>
+            <span class="result-value" id="result-ra-theo">&mdash;</span>
+          </div>
+          <div class="result-row">
+            <span class="result-label" data-i18n="result_ra_practical_label">Verwachte praktijk-Ra:</span>
+            <span class="result-value" id="result-ra-prakt">&mdash;</span>
+          </div>
+          <div class="result-row">
+            <span class="result-label" data-i18n="result_stepover_pct_label">Stepover als % van diameter:</span>
+            <span class="result-value" id="result-stepover-pct">&mdash;</span>
+          </div>
+        </div>
+
+        <div class="info-box" data-i18n-html="info_fusion">
+          <strong>Gebruik in Fusion 360:</strong><br>
+          Bij 3D Adaptive/Parallel/Scallop &rarr; Pass &rarr; <strong>Stepover</strong> of <strong>Maximum Stepdown</strong>: voer de berekende waarde in.<br>
+          Bij Scallop strategie kun je direct de <strong>Scallop Height</strong> invoeren = CUSP Height hierboven.
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title" data-i18n="panel_formulas">Formules</div>
+      <div style="font-size:13px;color:var(--text-dim);line-height:1.8;">
+        <div data-i18n-html="formula_cusp">CUSP height: <span class="formula">h = R &minus; &radic;(R&sup2; &minus; (ae/2)&sup2;)</span></div>
+        <div data-i18n-html="formula_stepover_cusp">Stepover uit CUSP: <span class="formula">ae = 2&middot;&radic;(2&middot;R&middot;h &minus; h&sup2;)</span></div>
+        <div data-i18n-html="formula_ra_theo">Theoretische Ra: <span class="formula">Ra_theo = ae&sup2; / (32&middot;R)</span></div>
+        <div data-i18n-html="formula_ra_practical">Praktijk Ra: <span class="formula">Ra_prakt = Ra_theo &times; correctiefactor</span></div>
+        <div data-i18n="formula_milling_note">Berekening: doelwaarde Ra wordt gedeeld door correctiefactor om de benodigde theoretische Ra te krijgen.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ DRAAIEN ============ -->
+  <div id="tab-draaien" class="tab-content hidden">
+    <div class="grid">
+      <div class="panel">
+        <div class="panel-title" data-i18n="panel_turning_input">Invoer Draaibeitel</div>
+
+        <div class="form-row">
+          <label for="draai-neusradius" data-i18n="label_nose_radius">Neusradius (r_&epsilon;)</label>
+          <div class="input-with-unit">
+            <input type="number" id="draai-neusradius" value="0.4" step="0.1" min="0.05">
+            <span class="unit">mm</span>
+          </div>
+          <div class="preset-buttons">
+            <button class="preset-btn" data-nose="0.2">0.2</button>
+            <button class="preset-btn" data-nose="0.4">0.4</button>
+            <button class="preset-btn" data-nose="0.8">0.8</button>
+            <button class="preset-btn" data-nose="1.2">1.2</button>
+            <button class="preset-btn" data-nose="1.6">1.6</button>
+          </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">
+
+        <div class="mode-toggle">
+          <button class="mode-btn mode-btn-draai active" data-draai-mode="ra-to-voeding" data-i18n="mode_ra_to_feed">Ra &rarr; Voeding</button>
+          <button class="mode-btn mode-btn-draai" data-draai-mode="voeding-to-ra" data-i18n="mode_feed_to_ra">Voeding &rarr; Ra</button>
+        </div>
+
+        <div id="ra-to-voeding-input">
+          <div class="form-row">
+            <label for="draai-ra" data-i18n="label_target_ra">Gewenste Ra waarde (praktijk)</label>
+            <div class="input-with-unit">
+              <input type="number" id="draai-ra" value="1.6" step="0.1" min="0.01">
+              <span class="unit">&micro;m</span>
+            </div>
+            <div class="preset-buttons">
+              <button class="preset-btn" data-ra-draai="0.4">N5 (0.4)</button>
+              <button class="preset-btn" data-ra-draai="0.8">N6 (0.8)</button>
+              <button class="preset-btn" data-ra-draai="1.6">N7 (1.6)</button>
+              <button class="preset-btn" data-ra-draai="3.2">N8 (3.2)</button>
+              <button class="preset-btn" data-ra-draai="6.3">N9 (6.3)</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="voeding-to-ra-input" class="hidden">
+          <div class="form-row">
+            <label for="draai-voeding-input" data-i18n="label_current_feed">Huidige voeding (f)</label>
+            <div class="input-with-unit">
+              <input type="number" id="draai-voeding-input" value="0.15" step="0.01" min="0.001">
+              <span class="unit" id="unit-feed-input">mm/omw</span>
+            </div>
+            <div class="preset-buttons">
+              <button class="preset-btn" data-voeding="0.05">0.05</button>
+              <button class="preset-btn" data-voeding="0.10">0.10</button>
+              <button class="preset-btn" data-voeding="0.15">0.15</button>
+              <button class="preset-btn" data-voeding="0.20">0.20</button>
+              <button class="preset-btn" data-voeding="0.25">0.25</button>
+              <button class="preset-btn" data-voeding="0.30">0.30</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label for="draai-bewerking" data-i18n="label_operation_type">Type bewerking</label>
+          <select id="draai-bewerking">
+            <option value="finish" data-i18n="op_standard">Standaard finish (ap = 0.5 &times; r)</option>
+            <option value="light" data-i18n="op_light">Lichte finish (ap = 0.3 &times; r)</option>
+            <option value="heavy" data-i18n="op_heavy">Zware finish (ap = 1.0 &times; r)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title" data-i18n="panel_turning_result">Resultaat Draaien</div>
+
+        <div class="tool-illustration">
+          <svg viewBox="0 0 300 130" xmlns="http://www.w3.org/2000/svg">
+            <rect x="20" y="40" width="260" height="20" fill="#2d3744"/>
+            <rect x="20" y="60" width="260" height="50" fill="#1a2129" stroke="#2d3744"/>
+            <path d="M 20 60 Q 35 55 50 60 Q 65 55 80 60 Q 95 55 110 60 Q 125 55 140 60 Q 155 55 170 60 Q 185 55 200 60 Q 215 55 230 60 Q 245 55 260 60 Q 275 55 280 60" stroke="#4fb3ff" stroke-width="1.5" fill="none"/>
+            <polygon points="240,90 270,90 260,70" fill="#e6edf3"/>
+            <circle cx="255" cy="78" r="4" fill="none" stroke="#fbbf24" stroke-width="1"/>
+            <text x="255" y="105" fill="#8b98a8" font-size="10" text-anchor="middle">r_&epsilon;</text>
+            <line x1="40" y1="20" x2="120" y2="20" stroke="#4fb3ff" stroke-width="1" marker-end="url(#arrow)"/>
+            <text x="80" y="14" fill="#4fb3ff" font-size="10" text-anchor="middle">f</text>
+            <defs>
+              <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+                <polygon points="0 0, 8 3, 0 6" fill="#4fb3ff"/>
+              </marker>
+            </defs>
+          </svg>
+        </div>
+
+        <div class="results">
+          <div class="result-row">
+            <span class="result-label" data-i18n="result_feed_label">Voeding (f):</span>
+            <span class="result-value highlight" id="result-voeding">&mdash;</span>
+          </div>
+          <div class="result-row">
+            <span class="result-label" data-i18n="result_ap_label">Snedediepte radiaal (ap):</span>
+            <span class="result-value" id="result-ap">&mdash;</span>
+          </div>
+          <div class="result-row">
+            <span class="result-label" data-i18n="result_ap_range_label">Bereik ap (min - max):</span>
+            <span class="result-value" id="result-ap-range">&mdash;</span>
+          </div>
+          <div class="result-row">
+            <span class="result-label" data-i18n="result_ra_theo_turning_label">Theoretische Ra (bij deze f):</span>
+            <span class="result-value" id="result-ra-theo-draai">&mdash;</span>
+          </div>
+          <div class="result-row">
+            <span class="result-label" data-i18n="result_ra_practical_label">Verwachte praktijk-Ra:</span>
+            <span class="result-value" id="result-ra-prakt-draai">&mdash;</span>
+          </div>
+        </div>
+
+        <div class="info-box" data-i18n-html="info_turning">
+          <strong>Praktijk tip:</strong> De voeding (f) is de dominante factor voor Ra bij draaien. Snedediepte (ap) moet bij voorkeur groter zijn dan de neusradius voor goede spaanbreuk. Voor finishen tussen 0.3&middot;r en 1.0&middot;r.
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title" data-i18n="panel_formulas">Formules</div>
+      <div style="font-size:13px;color:var(--text-dim);line-height:1.8;">
+        <div data-i18n-html="formula_ra_theo_turning">Theoretische Ra: <span class="formula">Ra_theo = f&sup2; / (32 &middot; r_&epsilon;)</span></div>
+        <div data-i18n-html="formula_feed_from_ra">Voeding uit Ra: <span class="formula">f = &radic;(32 &middot; r_&epsilon; &middot; Ra_theo)</span></div>
+        <div data-i18n-html="formula_ra_practical">Praktijk Ra: <span class="formula">Ra_prakt = Ra_theo &times; correctiefactor</span></div>
+        <div data-i18n="formula_turning_note">Voor doel-Ra (praktijk): we rekenen met Ra_theo = doel/correctiefactor om een veilige voeding te krijgen.</div>
+      </div>
+    </div>
+  </div>
+
+  <footer data-i18n="footer">
+    Ra Calculator &middot; Gemaakt voor frezen &amp; draaien in Fusion 360 en algemene CNC bewerking
+  </footer>
+</div>
+
+<script>
+  // ============== TRANSLATIONS ==============
+  const translations = {
+    nl: {
+      subtitle: 'Ruwheidsberekening voor frezen & draaien',
+      tab_milling: 'Frezen',
+      tab_turning: 'Draaien',
+      correction_label: 'Praktijk correctie:',
+      correction_info: 'Verhouding praktijk-Ra t.o.v. theoretische Ra. <strong>1.0</strong> = puur theoretisch, <strong>1.2</strong> = aanbevolen (20% marge), <strong>1.3+</strong> = veilige marge voor zwakke opspanning/lange uitsteek.',
+      panel_milling_input: 'Invoer frees',
+      mill_type_label: 'Type frees',
+      mill_type_ball: 'Kogelfrees (Ball End Mill)',
+      mill_type_bull: 'Toroidale / Bull Nose frees',
+      mill_diameter: 'Diameter frees',
+      mill_corner_radius: 'Hoekradius (corner radius)',
+      mill_radius: 'Frees radius (R = ø/2)',
+      surface_radius_label: 'Oppervlak radius (laat leeg voor vlak)',
+      surface_radius_help: 'Positief = convex (bol). Negatief = concaaf (hol). Leeg = vlak oppervlak.',
+      conservative_3d_label: 'Conservatieve 3D modus (×0.8 stepover, dichter bij Fusion)',
+      mode_ra_to_cusp: 'Ra → CUSP',
+      mode_cusp_to_ra: 'CUSP → Ra',
+      label_target_ra: 'Gewenste Ra waarde (praktijk)',
+      label_cusp_input: 'CUSP Height (uit Fusion)',
+      panel_milling_result: 'Resultaat frezen',
+      result_cusp_label: 'CUSP Height (Fusion stepover scallop):',
+      result_stepover_label: 'Stepover (ae):',
+      result_ra_theo_label: 'Theoretische Ra (voor invoer):',
+      result_ra_practical_label: 'Verwachte praktijk-Ra:',
+      result_stepover_pct_label: 'Stepover als % van diameter:',
+      info_fusion: '<strong>Gebruik in Fusion 360:</strong><br>Bij 3D Adaptive/Parallel/Scallop → Pass → <strong>Stepover</strong> of <strong>Maximum Stepdown</strong>: voer de berekende waarde in.<br>Bij Scallop strategie kun je direct de <strong>Scallop Height</strong> invoeren = CUSP Height hierboven.',
+      panel_formulas: 'Formules',
+      formula_cusp: 'CUSP height: <span class="formula">h = R − √(R² − (ae/2)²)</span>',
+      formula_stepover_cusp: 'Stepover uit CUSP: <span class="formula">ae = 2·√(2·R·h − h²)</span>',
+      formula_ra_theo: 'Theoretische Ra: <span class="formula">Ra_theo = ae² / (32·R)</span>',
+      formula_ra_practical: 'Praktijk Ra: <span class="formula">Ra_prakt = Ra_theo × correctiefactor</span>',
+      formula_milling_note: 'Berekening: doelwaarde Ra wordt gedeeld door correctiefactor om de benodigde theoretische Ra te krijgen.',
+      panel_turning_input: 'Invoer draaibeitel',
+      label_nose_radius: 'Neusradius (r_ε)',
+      mode_ra_to_feed: 'Ra → Voeding',
+      mode_feed_to_ra: 'Voeding → Ra',
+      label_current_feed: 'Huidige voeding (f)',
+      label_operation_type: 'Type bewerking',
+      op_standard: 'Standaard finish (ap = 0.5 × r)',
+      op_light: 'Lichte finish (ap = 0.3 × r)',
+      op_heavy: 'Zware finish (ap = 1.0 × r)',
+      panel_turning_result: 'Resultaat draaien',
+      result_feed_label: 'Voeding (f):',
+      result_ap_label: 'Snedediepte radiaal (ap):',
+      result_ap_range_label: 'Bereik ap (min - max):',
+      result_ra_theo_turning_label: 'Theoretische Ra (bij deze f):',
+      info_turning: '<strong>Praktijk tip:</strong> De voeding (f) is de dominante factor voor Ra bij draaien. Snedediepte (ap) moet bij voorkeur groter zijn dan de neusradius voor goede spaanbreuk. Voor finishen tussen 0.3·r en 1.0·r.',
+      formula_ra_theo_turning: 'Theoretische Ra: <span class="formula">Ra_theo = f² / (32 · r_ε)</span>',
+      formula_feed_from_ra: 'Voeding uit Ra: <span class="formula">f = √(32 · r_ε · Ra_theo)</span>',
+      formula_turning_note: 'Voor doel-Ra (praktijk): we rekenen met Ra_theo = doel/correctiefactor om een veilige voeding te krijgen.',
+      footer: 'Ra Calculator · Gemaakt voor frezen & draaien in Fusion 360 en algemene CNC bewerking',
+      error_cusp_invalid: 'CUSP ≥ R: ongeldig',
+      unit_mm_per_rev: 'mm/omw'
+    },
+    en: {
+      subtitle: 'Surface roughness calculation for milling & turning',
+      tab_milling: 'Milling',
+      tab_turning: 'Turning',
+      correction_label: 'Practical correction:',
+      correction_info: 'Ratio of practical Ra to theoretical Ra. <strong>1.0</strong> = pure theoretical, <strong>1.2</strong> = recommended (20% margin), <strong>1.3+</strong> = safe margin for weak clamping / long tool overhang.',
+      panel_milling_input: 'Mill input',
+      mill_type_label: 'Mill type',
+      mill_type_ball: 'Ball End Mill',
+      mill_type_bull: 'Toroidal / Bull Nose Mill',
+      mill_diameter: 'Mill diameter',
+      mill_corner_radius: 'Corner radius',
+      mill_radius: 'Mill radius (R = ø/2)',
+      surface_radius_label: 'Surface radius (leave empty for flat)',
+      surface_radius_help: 'Positive = convex. Negative = concave. Empty = flat surface.',
+      conservative_3d_label: 'Conservative 3D mode (×0.8 stepover, closer to Fusion)',
+      mode_ra_to_cusp: 'Ra → CUSP',
+      mode_cusp_to_ra: 'CUSP → Ra',
+      label_target_ra: 'Desired Ra value (practical)',
+      label_cusp_input: 'CUSP Height (from Fusion)',
+      panel_milling_result: 'Milling result',
+      result_cusp_label: 'CUSP Height (Fusion stepover scallop):',
+      result_stepover_label: 'Stepover (ae):',
+      result_ra_theo_label: 'Theoretical Ra (for input):',
+      result_ra_practical_label: 'Expected practical Ra:',
+      result_stepover_pct_label: 'Stepover as % of diameter:',
+      info_fusion: '<strong>Usage in Fusion 360:</strong><br>For 3D Adaptive/Parallel/Scallop → Pass → <strong>Stepover</strong> or <strong>Maximum Stepdown</strong>: enter the calculated value.<br>For Scallop strategy you can directly enter the <strong>Scallop Height</strong> = CUSP Height above.',
+      panel_formulas: 'Formulas',
+      formula_cusp: 'CUSP height: <span class="formula">h = R − √(R² − (ae/2)²)</span>',
+      formula_stepover_cusp: 'Stepover from CUSP: <span class="formula">ae = 2·√(2·R·h − h²)</span>',
+      formula_ra_theo: 'Theoretical Ra: <span class="formula">Ra_theo = ae² / (32·R)</span>',
+      formula_ra_practical: 'Practical Ra: <span class="formula">Ra_prakt = Ra_theo × correction factor</span>',
+      formula_milling_note: 'Calculation: target Ra is divided by the correction factor to get the required theoretical Ra.',
+      panel_turning_input: 'Turning tool input',
+      label_nose_radius: 'Nose radius (r_ε)',
+      mode_ra_to_feed: 'Ra → Feed',
+      mode_feed_to_ra: 'Feed → Ra',
+      label_current_feed: 'Current feed (f)',
+      label_operation_type: 'Operation type',
+      op_standard: 'Standard finish (ap = 0.5 × r)',
+      op_light: 'Light finish (ap = 0.3 × r)',
+      op_heavy: 'Heavy finish (ap = 1.0 × r)',
+      panel_turning_result: 'Turning result',
+      result_feed_label: 'Feed (f):',
+      result_ap_label: 'Radial depth of cut (ap):',
+      result_ap_range_label: 'Range ap (min - max):',
+      result_ra_theo_turning_label: 'Theoretical Ra (at this f):',
+      info_turning: '<strong>Practical tip:</strong> Feed (f) is the dominant factor for Ra in turning. Depth of cut (ap) should preferably be larger than the nose radius for good chip breaking. For finishing between 0.3·r and 1.0·r.',
+      formula_ra_theo_turning: 'Theoretical Ra: <span class="formula">Ra_theo = f² / (32 · r_ε)</span>',
+      formula_feed_from_ra: 'Feed from Ra: <span class="formula">f = √(32 · r_ε · Ra_theo)</span>',
+      formula_turning_note: 'For target Ra (practical): we calculate with Ra_theo = target/correction factor to obtain a safe feed.',
+      footer: 'Ra Calculator · Made for milling & turning in Fusion 360 and general CNC machining',
+      error_cusp_invalid: 'CUSP ≥ R: invalid',
+      unit_mm_per_rev: 'mm/rev'
+    },
+    de: {
+      subtitle: 'Oberflächenrauheit-Berechnung für Fräsen & Drehen',
+      tab_milling: 'Fräsen',
+      tab_turning: 'Drehen',
+      correction_label: 'Praxis-Korrektur:',
+      correction_info: 'Verhältnis von Praxis-Ra zu theoretischem Ra. <strong>1.0</strong> = rein theoretisch, <strong>1.2</strong> = empfohlen (20% Reserve), <strong>1.3+</strong> = sichere Reserve für schwache Aufspannung / lange Werkzeugauskragung.',
+      panel_milling_input: 'Fräser-Eingabe',
+      mill_type_label: 'Fräsertyp',
+      mill_type_ball: 'Kugelfräser (Ball End Mill)',
+      mill_type_bull: 'Torusfräser / Bull Nose',
+      mill_diameter: 'Fräserdurchmesser',
+      mill_corner_radius: 'Eckenradius (Corner radius)',
+      mill_radius: 'Fräserradius (R = ø/2)',
+      surface_radius_label: 'Werkstückradius (leer für eben)',
+      surface_radius_help: 'Positiv = konvex (gewölbt). Negativ = konkav (hohl). Leer = ebene Fläche.',
+      conservative_3d_label: 'Konservativer 3D-Modus (×0.8 Bahnabstand, näher an Fusion)',
+      mode_ra_to_cusp: 'Ra → CUSP',
+      mode_cusp_to_ra: 'CUSP → Ra',
+      label_target_ra: 'Gewünschter Ra-Wert (praktisch)',
+      label_cusp_input: 'CUSP-Höhe (aus Fusion)',
+      panel_milling_result: 'Fräs-Ergebnis',
+      result_cusp_label: 'CUSP-Höhe (Fusion Bahnabstand-Scallop):',
+      result_stepover_label: 'Bahnabstand (ae):',
+      result_ra_theo_label: 'Theoretischer Ra (für Eingabe):',
+      result_ra_practical_label: 'Erwarteter Praxis-Ra:',
+      result_stepover_pct_label: 'Bahnabstand als % des Durchmessers:',
+      info_fusion: '<strong>Verwendung in Fusion 360:</strong><br>Bei 3D Adaptive/Parallel/Scallop → Pass → <strong>Stepover</strong> oder <strong>Maximum Stepdown</strong>: berechneten Wert eingeben.<br>Bei der Scallop-Strategie können Sie die <strong>Scallop Height</strong> direkt eingeben = obige CUSP-Höhe.',
+      panel_formulas: 'Formeln',
+      formula_cusp: 'CUSP-Höhe: <span class="formula">h = R − √(R² − (ae/2)²)</span>',
+      formula_stepover_cusp: 'Bahnabstand aus CUSP: <span class="formula">ae = 2·√(2·R·h − h²)</span>',
+      formula_ra_theo: 'Theoretischer Ra: <span class="formula">Ra_theo = ae² / (32·R)</span>',
+      formula_ra_practical: 'Praxis-Ra: <span class="formula">Ra_prakt = Ra_theo × Korrekturfaktor</span>',
+      formula_milling_note: 'Berechnung: Ziel-Ra wird durch den Korrekturfaktor geteilt, um den benötigten theoretischen Ra zu erhalten.',
+      panel_turning_input: 'Drehmeißel-Eingabe',
+      label_nose_radius: 'Eckenradius (r_ε)',
+      mode_ra_to_feed: 'Ra → Vorschub',
+      mode_feed_to_ra: 'Vorschub → Ra',
+      label_current_feed: 'Aktueller Vorschub (f)',
+      label_operation_type: 'Bearbeitungsart',
+      op_standard: 'Standard-Schlichten (ap = 0.5 × r)',
+      op_light: 'Leichtes Schlichten (ap = 0.3 × r)',
+      op_heavy: 'Schweres Schlichten (ap = 1.0 × r)',
+      panel_turning_result: 'Dreh-Ergebnis',
+      result_feed_label: 'Vorschub (f):',
+      result_ap_label: 'Schnitttiefe radial (ap):',
+      result_ap_range_label: 'Bereich ap (min - max):',
+      result_ra_theo_turning_label: 'Theoretischer Ra (bei diesem f):',
+      info_turning: '<strong>Praxis-Tipp:</strong> Der Vorschub (f) ist der dominante Faktor für Ra beim Drehen. Schnitttiefe (ap) sollte vorzugsweise größer als der Eckenradius sein für gutes Spanbrechen. Zum Schlichten zwischen 0.3·r und 1.0·r.',
+      formula_ra_theo_turning: 'Theoretischer Ra: <span class="formula">Ra_theo = f² / (32 · r_ε)</span>',
+      formula_feed_from_ra: 'Vorschub aus Ra: <span class="formula">f = √(32 · r_ε · Ra_theo)</span>',
+      formula_turning_note: 'Für Ziel-Ra (praktisch): wir rechnen mit Ra_theo = Ziel/Korrekturfaktor, um einen sicheren Vorschub zu erhalten.',
+      footer: 'Ra-Rechner · Erstellt für Fräsen & Drehen in Fusion 360 und allgemeine CNC-Bearbeitung',
+      error_cusp_invalid: 'CUSP ≥ R: ungültig',
+      unit_mm_per_rev: 'mm/U'
+    },
+    fr: {
+      subtitle: 'Calcul de rugosité pour fraisage & tournage',
+      tab_milling: 'Fraisage',
+      tab_turning: 'Tournage',
+      correction_label: 'Correction pratique :',
+      correction_info: 'Rapport entre Ra pratique et Ra théorique. <strong>1.0</strong> = purement théorique, <strong>1.2</strong> = recommandé (marge 20%), <strong>1.3+</strong> = marge sûre pour serrage faible / long porte-à-faux.',
+      panel_milling_input: 'Saisie fraise',
+      mill_type_label: 'Type de fraise',
+      mill_type_ball: 'Fraise hémisphérique',
+      mill_type_bull: 'Fraise toroïdale / bout arrondi',
+      mill_diameter: 'Diamètre fraise',
+      mill_corner_radius: 'Rayon de coin',
+      mill_radius: 'Rayon de fraise (R = ø/2)',
+      surface_radius_label: 'Rayon de la surface (vide = plate)',
+      surface_radius_help: 'Positif = convexe. Négatif = concave. Vide = surface plate.',
+      conservative_3d_label: 'Mode 3D conservateur (×0.8 pas latéral, plus proche de Fusion)',
+      mode_ra_to_cusp: 'Ra → CUSP',
+      mode_cusp_to_ra: 'CUSP → Ra',
+      label_target_ra: 'Valeur Ra souhaitée (pratique)',
+      label_cusp_input: 'Hauteur CUSP (depuis Fusion)',
+      panel_milling_result: 'Résultat fraisage',
+      result_cusp_label: 'Hauteur CUSP (scallop Fusion) :',
+      result_stepover_label: 'Pas latéral (ae) :',
+      result_ra_theo_label: 'Ra théorique (pour entrée) :',
+      result_ra_practical_label: 'Ra pratique attendu :',
+      result_stepover_pct_label: 'Pas latéral en % du diamètre :',
+      info_fusion: '<strong>Utilisation dans Fusion 360 :</strong><br>Pour 3D Adaptive/Parallel/Scallop → Pass → <strong>Stepover</strong> ou <strong>Maximum Stepdown</strong> : entrez la valeur calculée.<br>Pour la stratégie Scallop, entrez directement la <strong>Scallop Height</strong> = hauteur CUSP ci-dessus.',
+      panel_formulas: 'Formules',
+      formula_cusp: 'Hauteur CUSP : <span class="formula">h = R − √(R² − (ae/2)²)</span>',
+      formula_stepover_cusp: 'Pas latéral depuis CUSP : <span class="formula">ae = 2·√(2·R·h − h²)</span>',
+      formula_ra_theo: 'Ra théorique : <span class="formula">Ra_theo = ae² / (32·R)</span>',
+      formula_ra_practical: 'Ra pratique : <span class="formula">Ra_prakt = Ra_theo × facteur correction</span>',
+      formula_milling_note: 'Calcul : le Ra cible est divisé par le facteur de correction pour obtenir le Ra théorique requis.',
+      panel_turning_input: 'Saisie outil de tournage',
+      label_nose_radius: 'Rayon de bec (r_ε)',
+      mode_ra_to_feed: 'Ra → Avance',
+      mode_feed_to_ra: 'Avance → Ra',
+      label_current_feed: 'Avance actuelle (f)',
+      label_operation_type: 'Type d\'opération',
+      op_standard: 'Finition standard (ap = 0.5 × r)',
+      op_light: 'Finition légère (ap = 0.3 × r)',
+      op_heavy: 'Finition lourde (ap = 1.0 × r)',
+      panel_turning_result: 'Résultat tournage',
+      result_feed_label: 'Avance (f) :',
+      result_ap_label: 'Profondeur de passe radiale (ap) :',
+      result_ap_range_label: 'Plage ap (min - max) :',
+      result_ra_theo_turning_label: 'Ra théorique (à cette f) :',
+      info_turning: '<strong>Astuce pratique :</strong> L\'avance (f) est le facteur dominant pour Ra en tournage. La profondeur de passe (ap) doit de préférence être supérieure au rayon de bec pour une bonne fragmentation du copeau. Pour la finition entre 0.3·r et 1.0·r.',
+      formula_ra_theo_turning: 'Ra théorique : <span class="formula">Ra_theo = f² / (32 · r_ε)</span>',
+      formula_feed_from_ra: 'Avance depuis Ra : <span class="formula">f = √(32 · r_ε · Ra_theo)</span>',
+      formula_turning_note: 'Pour Ra cible (pratique) : on calcule avec Ra_theo = cible/facteur correction pour obtenir une avance sûre.',
+      footer: 'Calculateur Ra · Conçu pour fraisage & tournage dans Fusion 360 et usinage CNC général',
+      error_cusp_invalid: 'CUSP ≥ R : invalide',
+      unit_mm_per_rev: 'mm/tr'
+    }
+  };
+
+  let currentLang = 'nl';
+
+  function t(key) {
+    return (translations[currentLang] && translations[currentLang][key]) || key;
+  }
+
+  function applyLanguage(lang) {
+    if (!translations[lang]) return;
+    currentLang = lang;
+    document.documentElement.lang = lang;
+    // Plain text translations
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      const val = t(key);
+      if (val) el.textContent = val;
+    });
+    // HTML translations
+    document.querySelectorAll('[data-i18n-html]').forEach(el => {
+      const key = el.getAttribute('data-i18n-html');
+      const val = t(key);
+      if (val) el.innerHTML = val;
+    });
+    // Save preference
+    try { localStorage.setItem('ra-calc-lang', lang); } catch (e) {}
+    // Update feed unit on input
+    const feedUnitEl = document.getElementById('unit-feed-input');
+    if (feedUnitEl) feedUnitEl.textContent = t('unit_mm_per_rev');
+    // Recompute (result strings may include translated units)
+    calcFrezen();
+    calcDraaien();
+  }
+
+  // ============== TAB SWITCHING ==============
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.remove('hidden');
+    });
+  });
+
+  // ============== MODE TOGGLE (frezen) ==============
+  document.querySelectorAll('.mode-btn[data-mode]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.mode-btn[data-mode]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (btn.dataset.mode === 'ra-to-cusp') {
+        document.getElementById('ra-to-cusp-input').classList.remove('hidden');
+        document.getElementById('cusp-to-ra-input').classList.add('hidden');
+      } else {
+        document.getElementById('ra-to-cusp-input').classList.add('hidden');
+        document.getElementById('cusp-to-ra-input').classList.remove('hidden');
+      }
+      calcFrezen();
+    });
+  });
+
+  // ============== MODE TOGGLE (draaien) ==============
+  document.querySelectorAll('.mode-btn-draai').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.mode-btn-draai').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (btn.dataset.draaiMode === 'ra-to-voeding') {
+        document.getElementById('ra-to-voeding-input').classList.remove('hidden');
+        document.getElementById('voeding-to-ra-input').classList.add('hidden');
+      } else {
+        document.getElementById('ra-to-voeding-input').classList.add('hidden');
+        document.getElementById('voeding-to-ra-input').classList.remove('hidden');
+      }
+      calcDraaien();
+    });
+  });
+
+  document.querySelectorAll('.preset-btn[data-voeding]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('draai-voeding-input').value = btn.dataset.voeding;
+      calcDraaien();
+    });
+  });
+
+  // ============== FREES TYPE ==============
+  const freesType = document.getElementById('frees-type');
+  const bullRow = document.getElementById('bull-radius-row');
+
+  freesType.addEventListener('change', () => {
+    if (freesType.value === 'bull') {
+      bullRow.style.display = 'flex';
+    } else {
+      bullRow.style.display = 'none';
+    }
+    calcFrezen();
+  });
+
+  document.getElementById('frees-diameter').addEventListener('input', () => {
+    const d = parseFloat(document.getElementById('frees-diameter').value);
+    document.getElementById('frees-radius').value = (d / 2).toFixed(3);
+    calcFrezen();
+  });
+
+  // ============== PRESET BUTTONS ==============
+  document.querySelectorAll('.preset-btn[data-ra]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('frezen-ra').value = btn.dataset.ra;
+      calcFrezen();
+    });
+  });
+
+  document.querySelectorAll('.preset-btn[data-ra-draai]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('draai-ra').value = btn.dataset.raDraai;
+      calcDraaien();
+    });
+  });
+
+  document.querySelectorAll('.preset-btn[data-nose]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('draai-neusradius').value = btn.dataset.nose;
+      calcDraaien();
+    });
+  });
+
+  // ============== HELPERS ==============
+  function fmt(v, decimals=4, unit='') {
+    if (!isFinite(v) || isNaN(v)) return '—';
+    return v.toFixed(decimals) + (unit ? ' ' + unit : '');
+  }
+
+  function getCorrection() {
+    const c = parseFloat(document.getElementById('correction-factor').value);
+    return (isFinite(c) && c >= 1.0) ? c : 1.2;
+  }
+
+  function getMillRadius() {
+    if (freesType.value === 'bull') {
+      return parseFloat(document.getElementById('frees-corner-radius').value);
+    } else {
+      const d = parseFloat(document.getElementById('frees-diameter').value);
+      return d / 2;
+    }
+  }
+
+  function getEffectiveMillRadius() {
+    const R_tool = getMillRadius();
+    const surfaceInput = document.getElementById('surface-radius').value.trim();
+    if (!surfaceInput) return R_tool;
+    const R_s = parseFloat(surfaceInput);
+    if (!isFinite(R_s) || R_s === 0) return R_tool;
+    if (R_s > 0) {
+      // Convex workpiece
+      return (R_tool * R_s) / (R_tool + R_s);
+    } else {
+      // Concave workpiece (negative input)
+      const R_s_abs = Math.abs(R_s);
+      if (R_s_abs <= R_tool) return R_tool; // fallback: tool doesn't fit
+      return (R_tool * R_s_abs) / (R_s_abs - R_tool);
+    }
+  }
+
+  function isConservative3D() {
+    return document.getElementById('conservative-3d').checked;
+  }
+
+  // ============== FREZEN CALC ==============
+  function calcFrezen() {
+    const R_eff = getEffectiveMillRadius();
+    const D = parseFloat(document.getElementById('frees-diameter').value);
+    const mode = document.querySelector('.mode-btn[data-mode].active').dataset.mode;
+    const k = getCorrection();
+    const conservativeFactor = isConservative3D() ? 0.8 : 1.0;
+
+    let cusp, stepover, ra_theo_um, ra_prakt_um;
+
+    if (mode === 'ra-to-cusp') {
+      const ra_target_um = parseFloat(document.getElementById('frezen-ra').value);
+      const ra_theo_target_um = ra_target_um / k;
+      const ra_theo_target_mm = ra_theo_target_um / 1000;
+
+      // Compute stepover from target Ra using effective radius
+      stepover = Math.sqrt(32 * R_eff * ra_theo_target_mm);
+      if (stepover > 2 * R_eff) stepover = 2 * R_eff * 0.99;
+
+      // Apply conservative 3D factor
+      stepover *= conservativeFactor;
+
+      const halfAe = stepover / 2;
+      cusp = R_eff - Math.sqrt(R_eff * R_eff - halfAe * halfAe);
+
+      // Recompute Ra from actual (possibly reduced) stepover
+      const ra_actual_mm = (stepover * stepover) / (32 * R_eff);
+      ra_theo_um = ra_actual_mm * 1000;
+      ra_prakt_um = ra_theo_um * k;
+    } else {
+      cusp = parseFloat(document.getElementById('frezen-cusp').value);
+
+      if (cusp >= R_eff) {
+        document.getElementById('result-cusp').textContent = t('error_cusp_invalid');
+        document.getElementById('result-cusp').className = 'result-value highlight error';
+        document.getElementById('result-stepover').textContent = '—';
+        document.getElementById('result-ra-theo').textContent = '—';
+        document.getElementById('result-ra-prakt').textContent = '—';
+        document.getElementById('result-stepover-pct').textContent = '—';
+        return;
+      }
+
+      stepover = 2 * Math.sqrt(2 * R_eff * cusp - cusp * cusp);
+
+      // Apply conservative 3D factor
+      stepover *= conservativeFactor;
+
+      const ra_theo_mm = (stepover * stepover) / (32 * R_eff);
+      ra_theo_um = ra_theo_mm * 1000;
+      ra_prakt_um = ra_theo_um * k;
+    }
+
+    document.getElementById('result-cusp').textContent = fmt(cusp, 4, 'mm');
+    document.getElementById('result-cusp').className = 'result-value highlight';
+    document.getElementById('result-stepover').textContent = fmt(stepover, 4, 'mm');
+    document.getElementById('result-ra-theo').textContent = fmt(ra_theo_um, 3);
+    document.getElementById('result-ra-prakt').textContent = fmt(ra_prakt_um, 3);
+
+    const pct = (stepover / D) * 100;
+    const pctEl = document.getElementById('result-stepover-pct');
+    pctEl.textContent = fmt(pct, 1, '%');
+    pctEl.className = pct > 50 ? 'result-value warning' : 'result-value';
+  }
+
+  // ============== DRAAIEN CALC ==============
+  function calcDraaien() {
+    const r = parseFloat(document.getElementById('draai-neusradius').value);
+    const k = getCorrection();
+    const draaiModeBtn = document.querySelector('.mode-btn-draai.active');
+    const draaiMode = draaiModeBtn ? draaiModeBtn.dataset.draaiMode : 'ra-to-voeding';
+
+    let f, ra_theo_um, ra_prakt_um;
+
+    if (draaiMode === 'ra-to-voeding') {
+      const ra_target_um = parseFloat(document.getElementById('draai-ra').value);
+      const ra_theo_target_um = ra_target_um / k;
+      const ra_theo_target_mm = ra_theo_target_um / 1000;
+      f = Math.sqrt(32 * r * ra_theo_target_mm);
+      ra_theo_um = ra_theo_target_um;
+      ra_prakt_um = ra_theo_um * k;
+    } else {
+      f = parseFloat(document.getElementById('draai-voeding-input').value);
+      const ra_theo_mm = (f * f) / (32 * r);
+      ra_theo_um = ra_theo_mm * 1000;
+      ra_prakt_um = ra_theo_um * k;
+    }
+
+    const bewerking = document.getElementById('draai-bewerking').value;
+    let apFactor;
+    if (bewerking === 'light') apFactor = 0.3;
+    else if (bewerking === 'heavy') apFactor = 1.0;
+    else apFactor = 0.5;
+
+    const ap = r * apFactor;
+    const apMin = r * 0.3;
+    const apMax = r * 1.0;
+
+    const voedingEl = document.getElementById('result-voeding');
+    const raPraktEl = document.getElementById('result-ra-prakt-draai');
+    if (draaiMode === 'ra-to-voeding') {
+      voedingEl.className = 'result-value highlight';
+      raPraktEl.className = 'result-value';
+    } else {
+      voedingEl.className = 'result-value';
+      raPraktEl.className = 'result-value highlight';
+    }
+
+    const feedUnit = t('unit_mm_per_rev');
+    document.getElementById('result-voeding').textContent = fmt(f, 3, feedUnit);
+    document.getElementById('result-ap').textContent = fmt(ap, 3, 'mm');
+    document.getElementById('result-ap-range').textContent = fmt(apMin, 3) + ' - ' + fmt(apMax, 3, 'mm');
+    document.getElementById('result-ra-theo-draai').textContent = fmt(ra_theo_um, 3);
+    document.getElementById('result-ra-prakt-draai').textContent = fmt(ra_prakt_um, 3);
+  }
+
+  // ============== EVENT LISTENERS ==============
+  document.getElementById('correction-factor').addEventListener('input', () => {
+    calcFrezen();
+    calcDraaien();
+  });
+
+  const freesInputs = ['frees-diameter', 'frees-corner-radius', 'frezen-ra', 'frezen-cusp', 'surface-radius'];
+  freesInputs.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', calcFrezen);
+  });
+
+  document.getElementById('conservative-3d').addEventListener('change', calcFrezen);
+
+  const draaiInputs = ['draai-neusradius', 'draai-ra', 'draai-voeding-input', 'draai-bewerking'];
+  draaiInputs.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', calcDraaien);
+      el.addEventListener('change', calcDraaien);
+    }
+  });
+
+  // ============== LANGUAGE PICKER ==============
+  const langPicker = document.getElementById('lang-picker');
+  langPicker.addEventListener('change', (e) => applyLanguage(e.target.value));
+
+  // Initial language: saved preference, browser language, or Dutch
+  let initialLang = 'nl';
+  try {
+    const saved = localStorage.getItem('ra-calc-lang');
+    if (saved && translations[saved]) {
+      initialLang = saved;
+    } else {
+      const navLang = (navigator.language || 'nl').slice(0, 2).toLowerCase();
+      if (translations[navLang]) initialLang = navLang;
+    }
+  } catch (e) {}
+
+  langPicker.value = initialLang;
+  applyLanguage(initialLang);
+</script>
+</body>
+</html>
